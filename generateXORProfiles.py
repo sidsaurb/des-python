@@ -15,6 +15,8 @@ for i in range(0, 8):
             a[i][j][k] = [[], 0]
 
 
+#maximum = 0;
+
 for i in range(0, 8):
     for j in range(0, 64):
         for k in range(0, 64):
@@ -27,9 +29,12 @@ for i in range(0, 8):
             inp_xor_val = j ^ k
             a[i][inp_xor_val][out_xor_val][0].append((j, k))
             a[i][inp_xor_val][out_xor_val][1] += 1
+            #if out_xor_val != 0 and a[i][inp_xor_val][out_xor_val][1] > maximum:
+		#maximum = a[i][inp_xor_val][out_xor_val][1]
 
 target = open("XORprofile.json", 'w')
 target.write(json.dumps(a))
 target.close()
+#print maximum
 #print a
 
