@@ -6,12 +6,17 @@ import constants
 import json
 from bitarray import bitarray
 
-
-def generateRandomData():
-    data = ""
-    for i in range(0,64):
-        data += str(random.randrange(0,2))
-    return bitarray(data)
+def generateRandomDataPair():
+    data1 = ""
+    data2 = ""
+    for i in range(0,32):
+        data1 += str(random.randrange(0,2))
+        data2 += str(random.randrange(0,2))
+    for i in range(0,32):
+	x = random.randrange(0,2)
+        data1 += str(x)
+	data2 += str(x)
+    return [bitarray(data1), bitarray(data2)]
 
 def inversePerm(perm):
     output = []
@@ -22,22 +27,27 @@ def inversePerm(perm):
 
 PInverse = inversePerm(constants.perm)
 
-def getKeySetRound3(i1, o1, i2, o2, sBoxNumber):
-    POutputXor = pyDES.xor(pyDES.xor(pyDES.xor(o1[32:64], o2[32:64]), i1[0:32]),
-                           i2[0:32])
+def getKeySetRound3(i1, o1, i2, o2, sNo):
+    POutputXor = o1[32:64] ^ o2[32:64] ^ i1[0:32] ^ i2[0:32]
     SOutputXor = pyDES.shuffle(POutputXor, PInverse, "Binary")
-    SOutputXorInt = int(SOutputXor[sBoxNumber*4:(sBoxNumber+1)*4].to01(), 2)
-    ExpandInput1 = pyDES.expand(o1[0:32])
-    ExpandInput2 = pyDES.expand(o2[0:32])
-    SInputXor = pyDES.xor(ExpandInput1, ExpandInput2)
-    SInputXorInt = int(SInputXor[sBoxNumber*6:(sBoxNumber+1)*6].to01(), 2)
+    SOutputXorInt = int(SOutputXor[sNo * 4 : (sNo + 1) * 4].to01(), 2)
+    ExpandOutput1 = pyDES.expand(o1[0:32])
+    ExpandOutput2 = pyDES.expand(o2[0:32])
+    SInputXor = ExpandOutput1 ^ ExpandOutput2
+    SInputXorInt = int(SInputXor[sNo * 6 : (sNo + 1) * 6].to01(), 2)
     #print XORProfile
     #print XORProfile[str(sBoxNumber)][str(SInputXorInt)][str(SOutputXorInt)]
-    pairs = XORProfile[str(sBoxNumber)][str(SInputXorInt)][str(SOutputXorInt)][0]
-
+    pairs = XORProfile[str(sNo)][str(SInputXorInt)][str(SOutputXorInt)][0]
+    #print pairs
     keyset = set()
+    #print SInputXorInt, SOutputXorInt
     for item in pairs:
-        possibleKey = item[0] ^ int(ExpandInput1[sBoxNumber*6:(sBoxNumber+1)*6].to01(), 2)
+        possibleKey = item[0] ^ int(ExpandOutput2[sNo * 6 : (sNo + 1) * 6].to01(), 2)
+	#print item[0] ^ item[1]
+	#print possibleKey
+	#a = pyDES.mapSBox(constants.sBoxes[sBoxNumber], bitarray(format(item[0], 'b').zfill(6)))
+	#b = pyDES.mapSBox(constants.sBoxes[sBoxNumber], bitarray(format(item[1], 'b').zfill(6)))
+	#print item[0] ^ item[1], int((a ^ b).to01(), 2)
         keyset.add(format(possibleKey, 'b').zfill(6))
     return keyset
 
@@ -48,18 +58,27 @@ xor_file.close()
 
 XORProfile = json.loads(a)
 
+#print XORProfile["0"]["52"]["13"]
 print "Breaking round 3..\n"
 
+pairs = []	# for caching previous encryptions
 keys = []
-for i in range(0,8):
+for i in range(0, 8):
     print "sBox %d keysets:" % (i + 1)
     s = set()
+    temp = list(pairs)
     while len(s) != 1:
-        inp1 = generateRandomData()
-        inp2 = generateRandomData()
-        out1 = pyDES.encrypt(inp1, 3)
-        out2 = pyDES.encrypt(inp2, 3)
-        keyset = getKeySetRound3(inp1, out1, inp2, out2, i)
+	if len(temp) != 0:
+	    x = temp.pop()
+	    inp = [x[0], x[1]]
+	    out1 = x[2]
+	    out2 = x[3]
+	else:
+            inp = generateRandomDataPair()
+            out1 = pyDES.encrypt(inp[0], 3)
+            out2 = pyDES.encrypt(inp[1], 3)
+	    pairs.append([inp[0], inp[1], out1, out2])
+        keyset = getKeySetRound3(inp[0], out1, inp[1], out2, i)
         print keyset
         if len(s) == 0:
             s = keyset
@@ -68,5 +87,6 @@ for i in range(0,8):
     print "intersection: %s \n" % str(s)
     keys.append(s.pop())
 
-print "original key: %s " % pyDES.keys[2].to01()
-print "found key   : %s " % ''.join(i for i in keys)
+print "original key r3: %s " % pyDES.keys[2].to01()
+print "found key    r3: %s " % ''.join(i for i in keys)
+

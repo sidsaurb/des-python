@@ -22,7 +22,7 @@ for i in range(0, 8):
             a2 = bitarray(format(k, 'b').zfill(6))
             out1 = pyDES.mapSBox(constants.sBoxes[i], a1)
             out2 = pyDES.mapSBox(constants.sBoxes[i], a2)
-            out_xor = pyDES.xor(out1, out2)
+            out_xor = out1 ^ out2
             out_xor_val = int(out_xor.to01(), 2)
             inp_xor_val = j ^ k
             a[i][inp_xor_val][out_xor_val][0].append((j, k))
