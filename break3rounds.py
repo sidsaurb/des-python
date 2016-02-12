@@ -68,16 +68,16 @@ for i in range(0, 8):
     s = set()
     temp = list(pairs)
     while len(s) != 1:
-	if len(temp) != 0:
-	    x = temp.pop()
-	    inp = [x[0], x[1]]
-	    out1 = x[2]
-	    out2 = x[3]
-	else:
+        if len(temp) != 0:
+            x = temp.pop()
+            inp = [x[0], x[1]]
+            out1 = x[2]
+            out2 = x[3]
+        else:
             inp = generateRandomDataPair()
             out1 = pyDES.encrypt(inp[0], 3)
             out2 = pyDES.encrypt(inp[1], 3)
-	    pairs.append([inp[0], inp[1], out1, out2])
+        pairs.append([inp[0], inp[1], out1, out2])
         keyset = getKeySetRound3(inp[0], out1, inp[1], out2, i)
         print keyset
         if len(s) == 0:

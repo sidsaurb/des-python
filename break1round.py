@@ -39,14 +39,14 @@ def mapSBoxInverse(output, sBoxNumber):
 PInverse = inversePerm(constants.perm)
 
 def getKeySet(input, output, sBoxNumber):
-    POutput = pyDES.xor(output[32:64], input[0:32])
+    POutput = output[32:64] ^ input[0:32]
     SOutput = pyDES.shuffle(POutput, PInverse, "Binary")
     XOROutput = mapSBoxInverse(SOutput, sBoxNumber)
     ExpandOutput = pyDES.expand(input[32:64])
     outsBox = ExpandOutput[sBoxNumber * 6 : (sBoxNumber + 1) * 6]
     keyset = set()
     for i in range(0,4):
-        keyset.add(pyDES.xor(outsBox, XOROutput[i]).to01())
+        keyset.add((outsBox ^ XOROutput[i]).to01())
     return keyset
 
 

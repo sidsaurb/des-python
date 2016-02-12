@@ -53,13 +53,6 @@ def round(input, multiple):
 def expand(input):
     return shuffle(input, constants.expand, "Binary")
 
-def xor(a, b):
-    length = len(a)
-    output = bitarray()
-    for i in range(0, length):
-        output.append(a[i] ^ b[i])
-    return output
-
 def mapSBox(sBox, input):
     row = bitarray()
     row.append(input[0])
@@ -72,7 +65,7 @@ def mapSBox(sBox, input):
 
 def f(input, key):
     expanded_right = expand(input)
-    xored_right = xor(expanded_right, key)
+    xored_right = expanded_right ^ key
     sboxed_right = bitarray()
     for j in range(0, 8):
         sBox = constants.sBoxes[j]
@@ -93,7 +86,7 @@ def encryptDESAux(input, steps, keys):
     for i in range(0, steps):
         permuted_right = f(right, keys[i])
         leftnew = right
-        right = xor(left, permuted_right)
+        right = left ^ permuted_right
         left = leftnew
     output = bitarray()
     output.extend(left)
@@ -113,7 +106,7 @@ def decryptDESAux(input, steps, keys):
     for i in range(0, steps):
         permuted_right = f(left, keys[steps - 1 - i])
         rightnew = left
-        left = xor(right, permuted_right)
+        left = right ^ permuted_right
         right = rightnew
     output = bitarray()
     output.extend(left)
@@ -123,7 +116,7 @@ def decryptDESAux(input, steps, keys):
 def encrypt(input, steps):
     return encryptDES(input, steps, keys)
 
-key_hex = "0ABCD232EA6D0D73"
+key_hex = "0ABCD232EA6DABCD"
 key_bin = hex_to_binary(key_hex)
 
 K0 = shuffle(key_bin, constants.pc1)
