@@ -53,23 +53,20 @@ import operator
 #
 # refer generateXORProfiles.py
 
-# this input xor list breaks round 4
-# with max 6 chosen plaintext-ciphertext pair
-
-#inputs = [("00808200", "60000000"),
-#          ("40080000", "04000000"),
-#          ("04000100", "00200000"),
-#          ("00401000", "00020000"),
-#          ("00040080", "00002000"),
-#          ("00200008", "00000400"),
-#          ("00100001", "00000060"),
-#          ("00020820", "00000002")]
-
-# this input xor list can't always break round 4
-# with 6 chosen plaintext-ciphertext pair
+'''
+inputs = [("00808200", "60000000"),
+          ("40080000", "04000000"),
+          ("04000100", "00200000"),
+          ("00401000", "00020000"),
+          ("00040080", "00002000"),
+          ("00200008", "00000400"),
+          ("00100001", "00000060"),
+          ("00020820", "00000002")]
+'''
 
 pairsNeeded = 0
 
+'''
 inputs = [("00808200", "60000000"),
           ("00808200", "60000000"),
           ("00808200", "60000000"),
@@ -78,6 +75,17 @@ inputs = [("00808200", "60000000"),
           ("00808200", "60000000"),
           ("00808200", "60000000"),
           ("00808200", "60000000")]
+'''
+
+inputs = [("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400"),
+          ("00200008", "00000400")]
+
 
 def prettyPrintKey(string, length):
     return ' '.join(string[i:i+length] for i in xrange(0,len(string),length))
@@ -111,8 +119,8 @@ def inversePerm(perm):
 
 PInverse = inversePerm(constants.perm)
 
-def getKeySetRound4(o1, o2, sNo):
-    POutputXor = o1[32:64] ^ o2[32:64] ^ bitarray(pyDES.hex_to_binary(inputs[sNo][1]))
+def getKeySetRound5(o1, o2, sNo):
+    POutputXor = o1[32:64] ^ o2[32:64] ^ bitarray(pyDES.hex_to_binary(inputs[sNo][0]))
     SOutputXor = pyDES.shuffle(POutputXor, PInverse, "Binary")
     SOutputXorInt = int(SOutputXor[sNo * 4 : (sNo + 1) * 4].to01(), 2)
     ExpandOutput1 = pyDES.expand(o1[0:32])
@@ -136,34 +144,7 @@ xor_file.close()
 
 XORProfile = json.loads(a)
 
-
-print "Breaking round 4.."
-
-'''
-keys = []
-for i in range(0, 8):
-    print "\nsBox %d key counts: " % (i + 1)
-    count = dict()
-    for attempts in range(0, 10):
-        inp = generateRandomDataPair(i)
-        out1 = pyDES.encrypt(inp[0], 4)
-        out2 = pyDES.encrypt(inp[1], 4)
-        keyset = getKeySetRound4(out1, out2, i)
-        if len(keyset) == 64:
-            attempts -= 1
-        else:
-            #print keyset
-            for item in keyset:
-                if item in count:
-                    count[item] += 1
-                else:
-                    count[item] = 1
-    maximum = getMaximum(count)
-    keys.append(format(maximum, 'b').zfill(6))
-    print count
-
-key =  ' '.join(i for i in keys)
-'''
+print "Breaking round 5.."
 
 pairs = [] # for caching previous encryptions
 keys = []
@@ -172,17 +153,17 @@ for i in range(0, 8):
     count = dict()
     temp = list(pairs)
     attempts = 0
-    while attempts < 6:
+    while attempts < 28: # 28 by chernoff bound
         if len(temp) != 0:
             x = temp.pop()
             out1 = x[0]
             out2 = x[1]
         else:
             inp = generateRandomDataPair(i)
-            out1 = pyDES.encrypt(inp[0], 4)
-            out2 = pyDES.encrypt(inp[1], 4)
+            out1 = pyDES.encrypt(inp[0], 5)
+            out2 = pyDES.encrypt(inp[1], 5)
             pairs.append([out1, out2])
-        keyset = getKeySetRound4(out1, out2, i)
+        keyset = getKeySetRound5(out1, out2, i)
         if len(keyset) != 64:
             for item in keyset:
                 if item in count:
@@ -196,7 +177,7 @@ for i in range(0, 8):
 
 key =  ' '.join(i for i in keys)
 
-print "\noriginal key r4: %s " % prettyPrintKey(pyDES.keys[3].to01(), 6)
-print "found key    r4: %s \n" % ' '.join(i for i in keys)
+print "\noriginal key r5: %s " % prettyPrintKey(pyDES.keys[4].to01(), 6)
+print "found key    r5: %s \n" % ' '.join(i for i in keys)
 print "total encryptions needed: %d \n" % pairsNeeded
 

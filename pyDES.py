@@ -116,6 +116,8 @@ def decryptDESAux(input, steps, keys):
 def encrypt(input, steps):
     return encryptDES(input, steps, keys)
 
+
+# ignore parity bits
 key_hex = "0ABCD232EA6DABCD"
 key_bin = hex_to_binary(key_hex)
 
